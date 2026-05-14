@@ -55,7 +55,6 @@ export class GameScene extends Phaser.Scene {
   private over = false;
   private trail: TrailPoint[] = [];
   private hud!: Phaser.GameObjects.Text;
-  private seedLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super('GameScene');
@@ -115,7 +114,7 @@ export class GameScene extends Phaser.Scene {
     this.hud = this.add
       .text(8, 8, '', { fontFamily: 'monospace', fontSize: '15px', color: '#ffffff' })
       .setDepth(10);
-    this.seedLabel = this.add
+    this.add
       .text(GAME_WIDTH - 8, 8, `SEED ${seed}`, {
         fontFamily: 'monospace',
         fontSize: '12px',
