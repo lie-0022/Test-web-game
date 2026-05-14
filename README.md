@@ -29,13 +29,37 @@
 9. **실제 저사양 안드로이드 + iOS Safari에서 조기 테스트**, 첫날부터 FPS 카운터.
 10. **배포** — 정적 호스팅 + PWA 우선 설계, 이후 포털(CrazyGames/Poki) 라이선싱, 광고+하이브리드 수익 모델, 점수/IAP는 서버 검증.
 
+## 실행 방법
+
+```bash
+npm install
+npm run dev      # 로컬 dev 서버 (모바일 테스트 시 host 노출됨)
+npm run build    # 타입체크 + 프로덕션 빌드
+```
+
+내부 해상도는 480×854 고정(세로형), Scale Manager `FIT` 으로 업스케일된다.
+콘셉별 코어 루프는 `src/scenes/GameScene.ts` 한 파일에 들어간다.
+
+## 콘셉 프로토타입 브랜치
+
+`.io` + 픽셀/레트로 방향으로 4개 콘셉을 각 브랜치에서 최소 코어루프 프로토타입으로 구현했다.
+콘셉 비교/근거는 [`docs/game-concept-research.md`](docs/game-concept-research.md) 참조.
+
+| 브랜치 | 콘셉 | 한 줄 |
+|---|---|---|
+| `concept/pixel-snatch` | PIXEL SNATCH | 루팅 아레나 + cash-out, 봇 페이크 |
+| `concept/ghost-racers` | GHOST RACERS | 일일 시드 트랙 고스트 레이싱, 비동기 |
+| `concept/mob-boss` | MOB BOSS | 군중(swarm) 지휘 아레나 + PvE 보스 |
+| `concept/arena-smiths` | ARENA SMITHS | 실시간 배틀 + 무기 파츠 포징 |
+
+각 브랜치를 체크아웃 → `npm install && npm run dev` 로 개별 테스트.
+
 ## 상세 리서치
 
-프레임워크 비교, 모바일 성능 함정, JS vs TS, 빌드 툴링, 에셋 관리, 2D vs 3D, 배포/수익화,
-초보자 흔한 실수, 2023–2025 동향, 전체 출처 링크 → [`docs/mobile-web-game-research.md`](docs/mobile-web-game-research.md)
+- 기술 스택: [`docs/mobile-web-game-research.md`](docs/mobile-web-game-research.md)
+- 게임 콘셉: [`docs/game-concept-research.md`](docs/game-concept-research.md)
 
 ## 다음 단계 (이후 세션)
 
-- Vite + Phaser 3 + TypeScript 프로젝트 스캐폴딩 (`phaserjs/template-vite-ts` 기반)
-- `package.json`, `tsconfig.json`, `vite.config.ts` 설정
-- 게임 로직 / 씬 / 에셋 구현
+- 콘셉 4개 테스트 후 1개 최종 확정
+- 확정 콘셉의 게임 디자인 문서(GDD) 작성 및 버티컬 슬라이스 구현
