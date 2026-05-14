@@ -2,8 +2,13 @@
 
 모바일 브라우저에서 실행되는 **모바일 웹게임** 프로젝트.
 
-현재 단계: 기술 스택 리서치 완료. 코드 스캐폴딩 전.
-방향 확정 — **2D + TypeScript**.
+> **🌿 이 브랜치: `concept/ghost-racers` — GHOST RACERS 프로토타입**
+> 일일 시드 트랙 고스트 레이싱, 비동기 멀티플레이. 코어 루프만 구현된 최소 프로토타입.
+> 테스트: `npm install && npm run dev` → 화면을 눌러 좌우 조향, 중앙선에 붙어 깔끔하게 달릴수록 빠름.
+> 구현: [`src/scenes/GameScene.ts`](src/scenes/GameScene.ts)
+
+현재 단계: 기술 스택 리서치 완료, 공통 스캐폴딩 완료, 콘셉 프로토타입 단계.
+방향 확정 — **2D + TypeScript + .io + 픽셀/레트로**.
 
 ## 권장 스택
 
