@@ -2,8 +2,10 @@
 
 모바일 브라우저에서 실행되는 **모바일 웹게임** 프로젝트.
 
-> **🌿 이 브랜치: `concept/pixel-snatch` — PIXEL SNATCH 프로토타입**
+> **🌿 이 브랜치: `concept/pixel-snatch` — PIXEL SNATCH 프로토타입 (확정 콘셉)**
 > 루팅 아레나 + cash-out, 봇 페이크 멀티플레이. 코어 루프만 구현된 최소 프로토타입.
+> 4개 콘셉 중 **PIXEL SNATCH로 확정** → 이 브랜치가 메인 개발선.
+> GDD: [`docs/pixel-snatch-gdd.md`](docs/pixel-snatch-gdd.md)
 > 테스트: `npm install && npm run dev` → 화면을 누르고 드래그해 코인 수집, 아래 노란 띠에서 cash-out.
 > 구현: [`src/scenes/GameScene.ts`](src/scenes/GameScene.ts)
 
@@ -59,12 +61,13 @@ npm run build    # 타입체크 + 프로덕션 빌드
 
 각 브랜치를 체크아웃 → `npm install && npm run dev` 로 개별 테스트.
 
-## 상세 리서치
+## 상세 리서치 / 디자인 문서
 
-- 기술 스택: [`docs/mobile-web-game-research.md`](docs/mobile-web-game-research.md)
-- 게임 콘셉: [`docs/game-concept-research.md`](docs/game-concept-research.md)
+- 기술 스택 리서치: [`docs/mobile-web-game-research.md`](docs/mobile-web-game-research.md)
+- 게임 콘셉 리서치: [`docs/game-concept-research.md`](docs/game-concept-research.md)
+- **PIXEL SNATCH GDD: [`docs/pixel-snatch-gdd.md`](docs/pixel-snatch-gdd.md)** — v1.0 출시까지의 메커닉/메타/수익/밸런싱/마일스톤 정의
 
 ## 다음 단계 (이후 세션)
 
-- 콘셉 4개 테스트 후 1개 최종 확정
-- 확정 콘셉의 게임 디자인 문서(GDD) 작성 및 버티컬 슬라이스 구현
+GDD §10 v0.5 — 버티컬 슬라이스. 코드 리팩터링(씬 분리, 엔티티 클래스) → 봇 AI 4타입 →
+보석/금괴 → 픽셀 아트 + Howler.js SFX → 메타 저장. 약 4주 분량.
