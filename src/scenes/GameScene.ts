@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
-// Ghost Racers — 1단계 코어 무브 슬라이스.
-// 터치 조향으로 네온 트레일을 남기며 일일 시드 트랙을 달린다.
-// 벽/장애물에 부딪히면 와이프 후 리셋. 백엔드 없음(고스트/리플레이는 이후 단계).
+// Ghost Racers — 2단계: 결승선 + 랩 타임 + 베스트 기록 + 재시작 루프.
+// 하단에서 출발해 상단 결승선까지. 탭으로 시작, 완주/충돌 후 탭으로 재시작.
+// 베스트 타임은 시드(일일 트랙)별로 localStorage에 저장.
 
 // 결정론적 RNG (mulberry32). 같은 시드 → 같은 트랙. 일일 시드의 토대.
 function mulberry32(seed: number): () => number {
@@ -32,6 +32,25 @@ interface Rect {
 const SPEED = 180; // px/s
 const TURN_RATE = 3.4; // rad/s
 const TRAIL_MAX = 600; // 트레일 점 상한 (고정 길이, 프레임당 할당 0 지향)
+const FINISH_Y = 56; // 이보다 위로 가면 완주
+
+type Phase = 'idle' | 'running' | 'dead';
+
+// iOS Safari 사생활 보호 모드는 localStorage 접근에서 throw — 기록만 포기하고 진행.
+function loadBest(seed: number): number {
+  try {
+    return Number(localStorage.getItem(`gr-best-${seed}`)) || 0;
+  } catch {
+    return 0;
+  }
+}
+function saveBest(seed: number, t: number): void {
+  try {
+    localStorage.setItem(`gr-best-${seed}`, String(t));
+  } catch {
+    /* 무시 */
+  }
+}
 
 export class GameScene extends Phaser.Scene {
   private seed = 0;
@@ -41,11 +60,12 @@ export class GameScene extends Phaser.Scene {
   private py = 0;
   private heading = 0;
   private elapsed = 0;
-  private dead = false;
+  private phase: Phase = 'idle';
   private trackGfx!: Phaser.GameObjects.Graphics;
   private trailGfx!: Phaser.GameObjects.Graphics;
   private ship!: Phaser.GameObjects.Triangle;
   private hud!: Phaser.GameObjects.Text;
+  private overlay!: Phaser.GameObjects.Text;
 
   constructor() {
     super('GameScene');
@@ -63,8 +83,23 @@ export class GameScene extends Phaser.Scene {
       .text(8, 8, '', { fontFamily: 'monospace', fontSize: '14px', color: '#9be7ff' })
       .setDepth(10);
 
+    this.overlay = this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '', {
+        fontFamily: 'monospace',
+        fontSize: '22px',
+        color: '#ffffff',
+        align: 'center',
+        backgroundColor: 'rgba(13,13,18,0.85)',
+        padding: { x: 18, y: 14 },
+      })
+      .setOrigin(0.5)
+      .setDepth(20);
+
     this.drawTrack();
-    this.respawn();
+    this.input.on('pointerdown', () => {
+      if (this.phase === 'idle') this.startRun();
+    });
+    this.showIdle('GHOST RACERS\n\n왼쪽 터치 = 좌회전\n오른쪽 터치 = 우회전\n\n탭해서 출발!');
   }
 
   // 일일 시드로 장애물 배치. 스타트 구역(하단)은 비워둔다.
@@ -85,24 +120,44 @@ export class GameScene extends Phaser.Scene {
     const g = this.trackGfx;
     g.clear();
     g.lineStyle(3, 0x2a2a44, 1).strokeRect(4, 4, GAME_WIDTH - 8, GAME_HEIGHT - 8);
+    // 결승선: 체커무늬 밴드
+    for (let x = 4, i = 0; x < GAME_WIDTH - 4; x += 16, i++) {
+      g.fillStyle(i % 2 === 0 ? 0xffffff : 0x222230, 1);
+      g.fillRect(x, FINISH_Y - 16, Math.min(16, GAME_WIDTH - 4 - x), 16);
+    }
     g.fillStyle(0x1b2a4a, 1).lineStyle(2, 0x3d5a9a, 1);
     for (const o of this.obstacles) {
       g.fillRect(o.x, o.y, o.w, o.h).strokeRect(o.x, o.y, o.w, o.h);
     }
   }
 
-  private respawn(): void {
+  private showIdle(message: string): void {
+    this.phase = 'idle';
+    this.resetShip();
+    this.overlay.setText(message).setVisible(true);
+    const best = loadBest(this.seed);
+    this.hud.setText(`SEED ${this.seed}\nBEST ${best ? best.toFixed(2) + 's' : '--'}`);
+  }
+
+  private resetShip(): void {
     this.px = GAME_WIDTH / 2;
     this.py = GAME_HEIGHT - 60;
     this.heading = -Math.PI / 2; // 위쪽
-    this.trail.length = 0;
-    this.elapsed = 0;
-    this.dead = false;
+    this.ship.setPosition(this.px, this.py).setRotation(0);
     this.cameras.main.setBackgroundColor('#0d0d12');
   }
 
+  private startRun(): void {
+    this.resetShip();
+    this.trail.length = 0;
+    this.trailGfx.clear();
+    this.elapsed = 0;
+    this.overlay.setVisible(false);
+    this.phase = 'running';
+  }
+
   update(_t: number, deltaMs: number): void {
-    if (this.dead) return;
+    if (this.phase !== 'running') return;
     const dt = Math.min(deltaMs, 50) / 1000; // 스파이크 클램프
     this.elapsed += dt;
 
@@ -115,6 +170,10 @@ export class GameScene extends Phaser.Scene {
     this.px += Math.cos(this.heading) * SPEED * dt;
     this.py += Math.sin(this.heading) * SPEED * dt;
 
+    if (this.py < FINISH_Y) {
+      this.finish();
+      return;
+    }
     if (this.hitWall() || this.hitObstacle()) {
       this.wipe();
       return;
@@ -130,7 +189,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private hitWall(): boolean {
-    return this.px < 6 || this.px > GAME_WIDTH - 6 || this.py < 6 || this.py > GAME_HEIGHT - 6;
+    return this.px < 6 || this.px > GAME_WIDTH - 6 || this.py > GAME_HEIGHT - 6;
   }
 
   private hitObstacle(): boolean {
@@ -151,10 +210,26 @@ export class GameScene extends Phaser.Scene {
     g.strokePath();
   }
 
+  private finish(): void {
+    const t = this.elapsed;
+    const prev = loadBest(this.seed);
+    let msg = `FINISH!  ${t.toFixed(2)}s`;
+    if (!prev || t < prev) {
+      saveBest(this.seed, t);
+      msg += prev ? `\nNEW BEST! (이전 ${prev.toFixed(2)}s)` : '\nNEW BEST!';
+    } else {
+      msg += `\nBEST ${prev.toFixed(2)}s`;
+    }
+    this.cameras.main.flash(200, 57, 255, 20);
+    this.showIdle(`${msg}\n\n탭해서 재도전`);
+  }
+
   private wipe(): void {
-    this.dead = true;
+    this.phase = 'dead';
     this.cameras.main.setBackgroundColor('#3a0d14');
     this.cameras.main.shake(150, 0.01);
-    this.time.delayedCall(500, () => this.respawn());
+    this.time.delayedCall(450, () =>
+      this.showIdle(`CRASH!  ${this.elapsed.toFixed(2)}s\n\n탭해서 재시작`),
+    );
   }
 }
